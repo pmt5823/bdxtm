@@ -1,22 +1,14 @@
-from database import find_car, remove_car
-from datetime import datetime
+from database import car_exit
+from plate_recognition import get_plate_from_camera
 
-PRICE_PER_HOUR = 5000  # 5k / giờ
+def car_out():
+    print("🚗 XE RA")
 
-def car_out(plate):
-    car = find_car(plate)
+    plate = get_plate_from_camera()
 
-    if car is None:
-        print("Không tìm thấy xe!")
+    if plate is None:
+        print("❌ Không đọc được biển")
         return
 
-    time_in = datetime.strptime(car[2], "%Y-%m-%d %H:%M:%S")
-    time_out = datetime.now()
-
-    hours = (time_out - time_in).total_seconds() / 3600
-    money = int(hours * PRICE_PER_HOUR)
-
-    remove_car(plate)
-
-    print("Xe ra:", plate)
-    print("Số tiền:", money, "VND")
+    print("Biển số:", plate)
+    car_exit(plate)

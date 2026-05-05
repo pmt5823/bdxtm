@@ -3,63 +3,75 @@ from datetime import datetime
 
 DB_NAME = "parking.db"
 
-# Tạo database và bảng
+
+# ================= TẠO DATABASE =================
 def init_db():
     conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
+    cur = conn.cursor()
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS cars (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            plate TEXT,
-            time_in TEXT
-        )
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS cars (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        plate TEXT,
+        time_in TEXT,
+        time_out TEXT,
+        fee INTEGER
+    )
     """)
 
     conn.commit()
     conn.close()
 
-# Thêm xe vào bãi
-def add_car(plate):
+
+# ================= XE VÀO =================
+def insert_car(plate):
     conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
+    cur = conn.cursor()
 
     time_in = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    cursor.execute("INSERT INTO cars (plate, time_in) VALUES (?,?)",
-                   (plate, time_in))
+    cur.execute("""
+        INSERT INTO cars (plate, time_in, time_out, fee)
+        VALUES (?, ?, ?, ?)
+    """, (plate, time_in, "", 0))
 
     conn.commit()
     conn.close()
 
-# Lấy danh sách xe đang gửi (WEB dùng hàm này)
-def get_all_cars():
+
+# ================= XE RA =================
+def car_exit(plate):
     conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
+    cur = conn.cursor()
 
-    cursor.execute("SELECT * FROM cars")
-    cars = cursor.fetchall()
+    # tìm xe chưa ra
+    cur.execute("""
+        SELECT id, time_in FROM cars
+        WHERE plate=? AND time_out=''
+        ORDER BY id DESC LIMIT 1
+    """, (plate,))
 
-    conn.close()
-    return cars
+    row = cur.fetchone()
 
-# Tìm xe theo biển số
-def find_car(plate):
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
+    if row is None:
+        conn.close()
+        return False
 
-    cursor.execute("SELECT * FROM cars WHERE plate=?", (plate,))
-    car = cursor.fetchone()
+    car_id = row[0]
+    time_in = datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
+    time_out = datetime.now()
 
-    conn.close()
-    return car
+    # tính tiền (3000đ mỗi phút demo)
+    minutes = int((time_out - time_in).total_seconds() / 60) + 1
+    fee = minutes * 3000
 
-# Xoá xe khi ra bãi
-def remove_car(plate):
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-
-    cursor.execute("DELETE FROM cars WHERE plate=?", (plate,))
+    cur.execute("""
+        UPDATE cars
+        SET time_out=?, fee=?
+        WHERE id=?
+    """, (time_out.strftime("%Y-%m-%d %H:%M:%S"), fee, car_id))
 
     conn.commit()
     conn.close()
+
+    return True
