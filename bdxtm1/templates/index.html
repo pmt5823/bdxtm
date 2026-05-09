@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Parking</title>
+    <style>
+        body { font-family: Arial; background:#f4f6f9; text-align:center }
+        h1 { margin-top:30px }
+        button {
+            padding:12px 25px; margin:10px;
+            font-size:18px; border:none; border-radius:6px;
+            color:white; cursor:pointer;
+        }
+        .in { background:green }
+        .out { background:red }
+
+        table {
+            margin:20px auto;
+            border-collapse:collapse;
+            width:80%;
+            background:white;
+            box-shadow:0 0 10px #ccc;
+        }
+        th,td { padding:10px; border-bottom:1px solid #ddd }
+        th { background:#222; color:white }
+    </style>
+</head>
+<body>
+
+<h1>SMART PARKING SYSTEM</h1>
+
+<button class="in" onclick="fetch('/car_in_camera')">XE VÀO</button>
+<button class="out" onclick="fetch('/car_out_camera')">XE RA</button>
+
+<h2>🚗 Xe đang trong bãi</h2>
+<table>
+<thead>
+<tr>
+    <th>Biển số</th>
+    <th>Giờ vào</th>
+</tr>
+</thead>
+<tbody id="cars"></tbody>
+</table>
+
+<h2> Lịch sử xe đã ra</h2>
+<table>
+<thead>
+<tr>
+    <th>Biển số</th>
+    <th>Giờ vào</th>
+    <th>Giờ ra</th>
+    <th>Tiền</th>
+</tr>
+</thead>
+<tbody id="history"></tbody>
+</table>
+
+<script>
+async function loadCars(){
+    const res = await fetch('/api/cars');
+    const data = await res.json();
+
+    let html="";
+    data.forEach(c=>{
+        html += `<tr>
+            <td>${c.plate}</td>
+            <td>${c.time_in}</td>
+        </tr>`;
+    });
+    document.getElementById("cars").innerHTML = html;
+}
+
+async function loadHistory(){
+    const res = await fetch('/api/history');
+    const data = await res.json();
+
+    let html="";
+    data.forEach(c=>{
+        html += `<tr>
+            <td>${c.plate}</td>
+            <td>${c.time_in}</td>
+            <td>${c.time_out}</td>
+            <td>${c.fee} đ</td>
+        </tr>`;
+    });
+    document.getElementById("history").innerHTML = html;
+}
+
+setInterval(()=>{
+    loadCars();
+    loadHistory();
+},1000);
+</script>
+
+</body>
+</html>
